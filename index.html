@@ -87,7 +87,7 @@
   .hrow time { color:var(--sub); font-variant-numeric:tabular-nums; flex:none; width:44px; }
   .hrow b { display:block; font-size:13px; } .hrow span { color:var(--sub); display:block; word-break:break-word; }
   #hlist { max-height:280px; overflow:auto; border-radius:14px; background:var(--soft); padding:2px 8px; }
-  #qbox.off, #cbox.off { opacity:.45; pointer-events:none; }
+  #qbox.off, #cbox.off, #xbox.off { opacity:.45; pointer-events:none; }
 </style>
 </head>
 <body>
@@ -202,13 +202,16 @@
       <div class="card" id="fx2" style="display:none">
         <h2>Live activity &amp; alat pintar</h2>
         <div class="row"><span>Pembantu tambahan<small>Program kecil pembaca media, jaringan, mikrofon, dll</small></span><span id="c-sys" class="chip">-</span></div>
+        <div class="row"><span>Jalan otomatis saat Windows menyala<small>Setelah restart atau shutdown, island muncul lagi sendiri tanpa membuka jendela aplikasi</small></span><input type="checkbox" id="o-auto"></div>
         <div class="row"><span>Aktifkan live activity<small>Pill melebar menampilkan indikator di kiri &amp; kanan; arahkan kursor untuk membuka detailnya</small></span><input type="checkbox" id="o-live"></div>
         <div class="row"><span>Notifikasi saat aplikasi dibuka<small>Tampil sebentar dengan ikon aplikasi</small></span><input type="checkbox" id="o-appnotif"></div>
         <div class="row"><span>Titik indikator rekam, mikrofon &amp; kamera<small>Merah = merekam layar, oranye = mikrofon, hijau = kamera, lengkap dengan notifikasi dan nama aplikasinya</small></span><input type="checkbox" id="o-devs"></div>
         <div class="row"><span>Pengendali media &amp; indikator audio<small>Judul lagu (Spotify, YouTube di browser, VLC), tombol putar/jeda/lanjut, gelombang mini saat kursor diarahkan</small></span><input type="checkbox" id="o-media"></div>
         <div class="row"><span>Kecepatan internet<small>Muncul otomatis saat unduhan besar (di atas 1,5 MB/dtk)</small></span><input type="checkbox" id="o-net"></div>
         <div class="row"><span>Progres render &amp; ekstrak<small>Dibaca dari persen di judul jendela (WinRAR, 7-Zip, penyalinan File Explorer, Media Encoder, dll)</small></span><input type="checkbox" id="o-prog"></div>
-        <div class="row"><span>FPS &amp; ping saat bermain<small>Aktif otomatis di aplikasi layar penuh/tanpa bingkai. FPS adalah perkiraan dari penyusun jendela Windows (DWM)</small></span><input type="checkbox" id="o-game"></div>
+        <div class="row"><span>FPS &amp; ping saat bermain<small>Muncul hanya saat game aktif (Roblox, Valorant, game Steam/Epic/Riot, dll). Ketuk pill untuk detail. Game tak terdeteksi: tekan Ctrl+Alt+G di game itu</small></span><input type="checkbox" id="o-game"></div>
+        <div class="row"><span>FPS akurat (PresentMon)<small>Membaca frame asli dari game, lengkap dengan 1% low. Perlu izin sekali saja</small></span><span id="c-pm" class="chip">-</span><input type="checkbox" id="o-fpsreal"></div>
+        <button onclick="ni('grantFps')">Beri izin FPS (sekali, perlu admin)</button>
         <div class="row"><span>Kantong seret &amp; lepas<small>Seret file, gambar, atau teks ke tengah atas layar, lalu tarik keluar ke aplikasi lain. Hanya untuk posisi island di atas</small></span><input type="checkbox" id="o-hub"></div>
         <div class="note" style="margin:6px 0">Monitor CPU / RAM / GPU:</div>
         <div class="seg4" style="grid-template-columns:repeat(3,1fr)"><button id="r0" onclick="setRmon(0)">Mati</button><button id="r1" onclick="setRmon(1)">Saat lag</button><button id="r2" onclick="setRmon(2)">Selalu</button></div>
@@ -219,6 +222,23 @@
           <div class="row"><span>Warna kursor</span><input type="color" id="o-ccolor" value="#ffffff" style="width:46px;height:30px;border:0;background:none"></div>
           <div class="slider"><div class="top"><span>Ukuran kursor</span><span id="v-csize"></span></div><input type="range" id="o-csize" min="20" max="64" value="36"></div>
         </div>
+      </div>
+
+      <div class="card" id="fx3" style="display:none">
+        <h2>Crosshair, kalender &amp; cuaca</h2>
+        <div class="row"><span>Crosshair di tengah layar<small>Garis bidik di tengah layar (Ctrl+Alt+X untuk nyala/mati cepat)</small></span><input type="checkbox" id="o-xh"></div>
+        <div id="xbox">
+          <div class="row"><span>Hanya saat game layar penuh</span><input type="checkbox" id="o-xhgame"></div>
+          <div class="seg4"><button id="xs-cross" onclick="setXs('cross')">Silang</button><button id="xs-dot" onclick="setXs('dot')">Titik</button><button id="xs-circle" onclick="setXs('circle')">Lingkaran</button><button id="xs-plus" onclick="setXs('plus')">Silang + titik</button></div>
+          <div class="row"><span>Warna</span><input type="color" id="o-xhcolor" value="#00ff66" style="width:46px;height:30px;border:0;background:none"></div>
+          <div class="slider"><div class="top"><span>Ukuran</span><span id="v-xhsize"></span></div><input type="range" id="o-xhsize" min="4" max="56" value="14"></div>
+          <div class="slider"><div class="top"><span>Ketebalan</span><span id="v-xhthick"></span></div><input type="range" id="o-xhthick" min="1" max="8" value="2"></div>
+          <div class="slider"><div class="top"><span>Celah tengah</span><span id="v-xhgap"></span></div><input type="range" id="o-xhgap" min="0" max="30" value="4"></div>
+          <div class="slider"><div class="top"><span>Kepekatan</span><span id="v-xhop"></span></div><input type="range" id="o-xhop" min="20" max="100" value="90"></div>
+        </div>
+        <div class="row" style="margin-top:8px"><span>Kalender &amp; cuaca<small>Ketuk pill (saat selalu tampil) atau tekan Ctrl+Alt+C</small></span><input type="checkbox" id="o-cal"></div>
+        <div class="row"><span>Kota untuk cuaca<small>Isi nama kota agar akurat. Kosong = perkiraan dari IP (bisa meleset)</small></span><input type="text" id="o-city" maxlength="60" placeholder="mis. Tangerang" style="width:150px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:8px;color:inherit;padding:6px 8px"></div>
+        <button class="btn" onclick="ni('openCal')">Buka kalender sekarang</button>
       </div>
 
       <div class="card" id="hst" style="display:none">
@@ -628,6 +648,7 @@ function poll() {
     chip('c-notif', ok, ok ? 'Aktif' : (i.enabled ? 'Menunggu' : 'Mati'), i.enabled && !ok);
     chip('c-win', i.anim, i.anim ? 'Aktif' : 'Mati');
     if (i.sys) chip('c-sys', i.sys.ok, i.sys.ok ? 'Aktif' : (i.sys.exists ? 'Menunggu' : 'Tidak ada'), i.sys.exists && !i.sys.ok);
+    if (i.pm) chip('c-pm', i.pm.ok, i.pm.ok ? 'Aktif' : (i.pm.exists ? 'Siaga' : 'Tidak ada'), i.pm.exists && !i.pm.ok);
     chip('c-apps', i.appsReady, i.appsReady ? (i.nApps + ' aplikasi') : 'Memuat…', !i.appsReady);
     $('tg').textContent = st.running ? 'Matikan Dynamic Island' : 'Nyalakan Dynamic Island';
     $('nerr').innerHTML = (i.enabled && i.notif && i.notif.err) ? '<span class="err">Pembaca notifikasi: ' + String(i.notif.err).replace(/[<>&]/g, '') + '</span>' : '';
@@ -750,7 +771,7 @@ function setRmon(v) { [0, 1, 2].forEach(function (i) { $('r' + i).classList.togg
 function setCs(v) { ['arrow', 'ring', 'dot', 'cross'].forEach(function (k) { $('cs-' + k).classList.toggle('on', k === v); }); ni('setOpt', 'cstyle', v); }
 function fx2Init(f) {
   $('fx2').style.display = 'block';
-  var D = { live: true, appnotif: true, devs: true, media: true, net: true, prog: true, game: true, hub: true, curs: false };
+  var D = { fpsreal: true, auto: true, live: true, appnotif: true, devs: true, media: true, net: true, prog: true, game: true, hub: true, curs: false };
   Object.keys(D).forEach(function (k) {
     var c = $('o-' + k); c.checked = f[k] === undefined ? D[k] : !!f[k];
     c.onchange = function () { ni('setOpt', k, this.checked); if (k === 'curs') $('cbox').classList.toggle('off', !this.checked); };
@@ -761,6 +782,20 @@ function fx2Init(f) {
   $('o-ccolor').oninput = function () { ni('setOpt', 'ccolor', this.value); };
   $('o-csize').oninput = function () { $('v-csize').textContent = this.value + ' px'; ni('setOpt', 'csize', +this.value); };
   $('cbox').classList.toggle('off', !$('o-curs').checked);
+}
+
+function setXs(v) { ['cross', 'dot', 'circle', 'plus'].forEach(function (k) { $('xs-' + k).classList.toggle('on', k === v); }); ni('setOpt', 'xhstyle', v); }
+function fx3Init(f) {
+  $('fx3').style.display = 'block';
+  ['xh', 'xhgame', 'cal'].forEach(function (k) { var c = $('o-' + k); c.checked = f[k] === undefined ? (k === 'cal') : !!f[k]; c.onchange = function () { ni('setOpt', k, this.checked); if (k === 'xh') $('xbox').classList.toggle('off', !this.checked); }; });
+  $('xbox').classList.toggle('off', !$('o-xh').checked);
+  var st = f.xhstyle || 'cross'; ['cross', 'dot', 'circle', 'plus'].forEach(function (k) { $('xs-' + k).classList.toggle('on', k === st); });
+  $('o-xhcolor').value = f.xhcolor || '#00ff66'; $('o-xhcolor').oninput = function () { ni('setOpt', 'xhcolor', this.value); };
+  [['xhsize', 14, ' px'], ['xhthick', 2, ' px'], ['xhgap', 4, ' px'], ['xhop', 90, '%']].forEach(function (a) {
+    var r = $('o-' + a[0]); r.value = f[a[0]] == null ? a[1] : f[a[0]]; $('v-' + a[0]).textContent = r.value + a[2];
+    r.oninput = function () { $('v-' + a[0]).textContent = this.value + a[2]; ni('setOpt', a[0], +this.value); };
+  });
+  var ci = $('o-city'); ci.value = f.city || ''; ci.onchange = function () { ni('setOpt', 'city', this.value); };
 }
 
 function nativeInit() {
@@ -786,7 +821,7 @@ function nativeInit() {
     fltRows(function (r) { r.style.display = (!q || r.dataset.n.indexOf(q) >= 0) ? '' : 'none'; });
   };
   sndUi(); fltMode(FLT.mode);
-  smartInit(f); fx2Init(f);
+  smartInit(f); fx2Init(f); fx3Init(f);
   poll(); setInterval(poll, 1500);
 }
 
