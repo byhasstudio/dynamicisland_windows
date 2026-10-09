@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+}<!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="utf-8">
@@ -207,11 +207,15 @@
         <div class="row"><span>Notifikasi saat aplikasi dibuka<small>Tampil sebentar dengan ikon aplikasi</small></span><input type="checkbox" id="o-appnotif"></div>
         <div class="row"><span>Titik indikator rekam, mikrofon &amp; kamera<small>Merah = merekam layar, oranye = mikrofon, hijau = kamera, lengkap dengan notifikasi dan nama aplikasinya</small></span><input type="checkbox" id="o-devs"></div>
         <div class="row"><span>Pengendali media &amp; indikator audio<small>Judul lagu (Spotify, YouTube di browser, VLC), tombol putar/jeda/lanjut, gelombang mini saat kursor diarahkan</small></span><input type="checkbox" id="o-media"></div>
+        <div class="row"><span>Notifikasi saat ada suara / lagu diputar<small>Banner judul lagu yang muncul setiap ada suara (misalnya YouTube). Matikan kalau mengganggu; pengendali media di pill tetap jalan</small></span><input type="checkbox" id="o-mtoast"></div>
         <div class="row"><span>Kecepatan internet<small>Muncul otomatis saat unduhan besar (di atas 1,5 MB/dtk)</small></span><input type="checkbox" id="o-net"></div>
         <div class="row"><span>Progres render &amp; ekstrak<small>Dibaca dari persen di judul jendela (WinRAR, 7-Zip, penyalinan File Explorer, Media Encoder, dll)</small></span><input type="checkbox" id="o-prog"></div>
-        <div class="row"><span>FPS &amp; ping saat bermain<small>Muncul hanya saat game aktif (Roblox, Valorant, game Steam/Epic/Riot, dll). Ketuk pill untuk detail. Game tak terdeteksi: tekan Ctrl+Alt+G di game itu</small></span><input type="checkbox" id="o-game"></div>
+        <div class="row"><span>FPS &amp; ping saat bermain<small>Muncul hanya saat game aktif (Roblox, Valorant, game Steam/Epic/Riot, dll). Ketuk pill untuk detail. Game tak terdeteksi: pilih manual di daftar bawah, atau tekan Ctrl+Alt+G di game itu</small></span><input type="checkbox" id="o-game"></div>
         <div class="row"><span>FPS akurat (PresentMon)<small>Membaca frame asli dari game, lengkap dengan 1% low. Perlu izin sekali saja</small></span><span id="c-pm" class="chip">-</span><input type="checkbox" id="o-fpsreal"></div>
         <button onclick="ni('grantFps')">Beri izin FPS (sekali, perlu admin)</button>
+        <div class="note" style="margin:10px 0 4px"><b>Pilih game manual</b><br>Centang aplikasi yang harus dianggap game agar FPS &amp; ping muncul. Buka game-nya dulu (jangan diminimize), daftar menyegarkan sendiri.</div>
+        <div id="glist" style="max-height:260px;overflow:auto;margin-bottom:6px"></div>
+        <div style="display:flex;gap:8px"><input type="text" id="gadd" maxlength="60" placeholder="nama file, mis. mygame.exe" style="flex:1;margin-bottom:0"><button onclick="gAdd()">Tambah</button></div>
         <div class="row"><span>Kantong seret &amp; lepas<small>Seret file, gambar, atau teks ke tengah atas layar, lalu tarik keluar ke aplikasi lain. Hanya untuk posisi island di atas</small></span><input type="checkbox" id="o-hub"></div>
         <div class="note" style="margin:6px 0">Monitor CPU / RAM / GPU:</div>
         <div class="seg4" style="grid-template-columns:repeat(3,1fr)"><button id="r0" onclick="setRmon(0)">Mati</button><button id="r1" onclick="setRmon(1)">Saat lag</button><button id="r2" onclick="setRmon(2)">Selalu</button></div>
@@ -648,7 +652,11 @@ function poll() {
     chip('c-notif', ok, ok ? 'Aktif' : (i.enabled ? 'Menunggu' : 'Mati'), i.enabled && !ok);
     chip('c-win', i.anim, i.anim ? 'Aktif' : 'Mati');
     if (i.sys) chip('c-sys', i.sys.ok, i.sys.ok ? 'Aktif' : (i.sys.exists ? 'Menunggu' : 'Tidak ada'), i.sys.exists && !i.sys.ok);
-    if (i.pm) chip('c-pm', i.pm.ok, i.pm.ok ? 'Aktif' : (i.pm.exists ? 'Siaga' : 'Tidak ada'), i.pm.exists && !i.pm.ok);
+    if (i.pm) {
+      var p = i.pm, pl = 'Siaga (belum ada game)';
+      if (!p.exists) pl = 'Tidak ada'; else if (p.ok) pl = 'Aktif'; else if (p.grp === 0) pl = 'Belum izin / sign out'; else if (p.game) pl = 'Menunggu frame';
+      chip('c-pm', p.ok, pl, p.exists && !p.ok);
+    }
     chip('c-apps', i.appsReady, i.appsReady ? (i.nApps + ' aplikasi') : 'Memuat…', !i.appsReady);
     $('tg').textContent = st.running ? 'Matikan Dynamic Island' : 'Nyalakan Dynamic Island';
     $('nerr').innerHTML = (i.enabled && i.notif && i.notif.err) ? '<span class="err">Pembaca notifikasi: ' + String(i.notif.err).replace(/[<>&]/g, '') + '</span>' : '';
@@ -769,9 +777,41 @@ function smartInit(f) {
 
 function setRmon(v) { [0, 1, 2].forEach(function (i) { $('r' + i).classList.toggle('on', i === v); }); ni('setOpt', 'rmon', v); }
 function setCs(v) { ['arrow', 'ring', 'dot', 'cross'].forEach(function (k) { $('cs-' + k).classList.toggle('on', k === v); }); ni('setOpt', 'cstyle', v); }
+var gLast = '';
+function gRender(force) {
+  if (document.hidden || !$('glist')) return;
+  var d = {}; try { d = JSON.parse(ni('getGameApps') || '{}'); } catch (e) {}
+  var wins = d.wins || [], games = d.games || [], no = d.nogame || [];
+  var key = JSON.stringify([wins, games, no, d.exe, d.full]);
+  if (!force && key === gLast) return; gLast = key;
+  var rows = [], seen = {};
+  function add(n, t) { if (!n || seen[n]) return; seen[n] = 1; rows.push({ n: n, t: t || '' }); }
+  wins.forEach(function (w) { add(w.n, w.t); });
+  games.concat(no).forEach(function (n) { add(n, ''); });
+  if (!rows.length) { $('glist').innerHTML = '<div class="note">Belum ada jendela terdeteksi. Nyalakan Dynamic Island dulu, lalu buka game-nya.</div>'; return; }
+  $('glist').innerHTML = rows.map(function (r) {
+    var man = games.indexOf(r.n) >= 0, nog = no.indexOf(r.n) >= 0, auto = !man && !nog && d.full && d.exe === r.n;
+    var on = man || auto, tag = man ? 'Manual' : (auto ? 'Otomatis' : (nog ? 'Bukan game' : ''));
+    return '<div class="row" style="padding:6px 0"><span style="min-width:0"><b>' + esc(r.n) + '</b>' + (r.t ? '<small style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:230px">' + esc(r.t) + '</small>' : '') + '</span>' +
+      '<span style="display:flex;align-items:center;gap:8px">' + (tag ? '<span class="chip' + (on ? ' ok' : '') + '">' + tag + '</span>' : '') +
+      ((man || nog) ? '<button data-g="' + esc(r.n) + '" data-m="auto" style="padding:4px 9px;font-size:12px">Reset</button>' : '') +
+      '<input type="checkbox" data-g="' + esc(r.n) + '"' + (on ? ' checked' : '') + '></span></div>';
+  }).join('');
+}
+function gAdd() {
+  var v = $('gadd').value.trim(); if (!v) return;
+  ni('setGameMark', v, 'game'); $('gadd').value = ''; gRender(true);
+}
+function gInit() {
+  var g = $('glist');
+  g.onchange = function (e) { var t = e.target; if (t && t.dataset && t.dataset.g && t.type === 'checkbox') { ni('setGameMark', t.dataset.g, t.checked ? 'game' : 'notgame'); gRender(true); } };
+  g.onclick = function (e) { var t = e.target; if (t && t.dataset && t.dataset.m === 'auto') { ni('setGameMark', t.dataset.g, 'auto'); gRender(true); } };
+  $('gadd').onkeydown = function (e) { if (e.key === 'Enter') gAdd(); };
+  gRender(true); setInterval(function () { gRender(false); }, 2000);
+}
 function fx2Init(f) {
   $('fx2').style.display = 'block';
-  var D = { fpsreal: true, auto: true, live: true, appnotif: true, devs: true, media: true, net: true, prog: true, game: true, hub: true, curs: false };
+  var D = { fpsreal: true, auto: true, live: true, appnotif: true, devs: true, media: true, mtoast: true, net: true, prog: true, game: true, hub: true, curs: false };
   Object.keys(D).forEach(function (k) {
     var c = $('o-' + k); c.checked = f[k] === undefined ? D[k] : !!f[k];
     c.onchange = function () { ni('setOpt', k, this.checked); if (k === 'curs') $('cbox').classList.toggle('off', !this.checked); };
@@ -782,6 +822,7 @@ function fx2Init(f) {
   $('o-ccolor').oninput = function () { ni('setOpt', 'ccolor', this.value); };
   $('o-csize').oninput = function () { $('v-csize').textContent = this.value + ' px'; ni('setOpt', 'csize', +this.value); };
   $('cbox').classList.toggle('off', !$('o-curs').checked);
+  gInit();
 }
 
 function setXs(v) { ['cross', 'dot', 'circle', 'plus'].forEach(function (k) { $('xs-' + k).classList.toggle('on', k === v); }); ni('setOpt', 'xhstyle', v); }
